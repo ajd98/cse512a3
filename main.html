@@ -4,7 +4,16 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
+    <div id="mainChart">
     <input type="range" min="1" max="999" value="100" class="slider" id="income_slider" orient="vertical"/>
+    </div>
+    <label for="ageInput">Your age:</label>
+    <input type="text" id="ageInput" name="ageInput">
+    <label for="sexInput">Your sex:</label>
+    <select id="sexInput" name="sexInput">
+      <option value="2">Female</option>
+      <option value="1">Male</option>
+    </select>
   </body>
   <script src="nhanes.js"></script>
   <script src="d3.v6.js"></script>

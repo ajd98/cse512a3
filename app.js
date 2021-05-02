@@ -1,9 +1,11 @@
 // Note that to get income from the poverty index, we divide by 100 then multiply by about $13000 (the current poverty level for an individual)
 //filter data
-data = data.filter(d => d.systolic_bp > 0);
+data = data.filter(d => d.systolic_bp > 0 && d.poverty_index > 0);
 
 // Plot parameters 
-const filterWidth = 5;
+const incomeFilterWidth = 33;
+const ageFilterWidth = 5;
+
 const width = 400;
 const height = 400;
 const margin = {
@@ -71,13 +73,32 @@ let participants = svg
     .attr('cy', d => y(d['serum_cholesterol']))
     .attr('r', d => 2);
 
-document.body.appendChild(svg.node());
+document.getElementById('mainChart').appendChild(svg.node());
 
-const slider = document.getElementById('income_slider');
+let selectedAge = 35;
+let selectedSex = 1;
+let selectedPovertyIndex = 5;
 
-function onIncomeChange (e) {
+function onInputChange (e) {
   console.log(slider.value);
-  filteredData = data.filter(d => ((d.poverty_index > slider.value - filterWidth) && (d.poverty_index < slider.value + filterWidth)));
+  try {
+    selectedAge = Number(ageInput.value);
+  } catch(err) {
+    // change styling of ageInput box here in future
+  }
+  selectedSex = Number(sexInput.value);
+  selectedPovertyIndex = Number(slider.value);
+
+  filteredData = data.filter(
+    d => (
+      (d.poverty_index > selectedPovertyIndex - incomeFilterWidth) 
+      && (d.poverty_index < selectedPovertyIndex + incomeFilterWidth)
+      && (d.age > selectedAge - ageFilterWidth)
+      && (d.age < selectedAge + ageFilterWidth)
+      && (d.sex == selectedSex)
+    )
+  );
+
   console.log('filtered');
 
   participants = participants
@@ -89,20 +110,22 @@ function onIncomeChange (e) {
         .attr('cx', d => x(d.systolic_bp))
         .attr('cy', d => y(d.serum_cholesterol))
         .attr('r', d => 2),
-      //enter => {
-      //  try { 
-      //    enter
-      //      .attr('fill', myDotColor)
-      //      .attr('opacity', foregroundDotOpacity)
-      //      .attr('cx', d => x(d.systolic_bp))
-      //      .attr('cy', d => y(d.serum_cholesterol))
-      //      .attr('r', d => 2)
-      //  } catch(err) {
-      //    //pass 
-      //  }
-      //},
       update => update.attr('fill', myDotColor).attr('opacity', foregroundDotOpacity),
-      exit => exit.attr('fill', '#000').attr('opacity', backgroundDotOpacity)
+      exit => exit
+        .attr('fill', '#000')
+        .attr('opacity', backgroundDotOpacity)
+        .attr('cx', d => x(d.systolic_bp))
+        .attr('cy', d => y(d.serum_cholesterol))
+        .attr('r', d => 2),
     );
 }
-slider.addEventListener('change', onIncomeChange);
+
+const slider = document.getElementById('income_slider');
+slider.addEventListener('input', onInputChange);
+slider.addEventListener('change', onInputChange);
+const ageInput = document.getElementById('ageInput');
+ageInput.addEventListener('change', onInputChange);
+const sexInput = document.getElementById('sexInput');
+sexInput.addEventListener('change', onInputChange);
+onInputChange();
+
