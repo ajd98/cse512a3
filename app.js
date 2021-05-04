@@ -126,10 +126,19 @@ let participants = svg
 
 document.getElementById('mainChart').appendChild(svg.node());
 
+// Selection parameters
 let selectedAge = 35;
 let selectedSex = 1;
 let selectedPovertyIndex = 5;
 let otherPovertyIndex = 10;
+
+//Initialize average parameters
+let averages = {
+  my: {x: -1, y: -1, color: myDotColor},
+  other: {x: -1, y: -1, color: otherDotColor}
+};
+let myAverageMark = null;
+let otherAverageMark = null;
 
 function onInputChange (e) {
   try {
@@ -151,8 +160,8 @@ function onInputChange (e) {
       && (d.sex == selectedSex)
     )
   );
-  console.log('----')
-  console.log(average(filteredData, 'systolic_bp'))
+  averages.my.x = average(filteredData, 'systolic_bp');
+  averages.my.y = average(filteredData, 'serum_cholesterol');
 
   participants = participants
     .data(filteredData, d => d.index)
@@ -182,7 +191,8 @@ function onInputChange (e) {
       && (d.sex == selectedSex)
     )
   );
-  console.log(average(filteredData, 'systolic_bp'))
+  averages.other.x = average(filteredData, 'systolic_bp');
+  averages.other.y = average(filteredData, 'serum_cholesterol');
 
   participants = participants
     .data(filteredData, d => d.index)
@@ -196,6 +206,32 @@ function onInputChange (e) {
       update => update.attr('fill', intersectDotColor).attr('opacity', foregroundDotOpacity),
       exit => exit, // dont need to do anything here
     );
+
+  // place average marks
+  try {
+    myAverageMark.remove();
+  } catch(err) {
+    //pass
+  }
+  try {
+    otherAverageMark.remove();
+  } catch(err) {
+    //pass
+  }
+  myAverageMark = svg.append('circle')
+    .attr('fill', myDotColor)
+    .attr('stroke', 'black')
+    .attr('opacity', 1)
+    .attr('cx', x(averages.my.x))
+    .attr('cy', y(averages.my.y))
+    .attr('r', 10);
+  otherAverageMark = svg.append('circle')
+    .attr('fill', otherDotColor)
+    .attr('stroke', 'black')
+    .attr('opacity', 1)
+    .attr('cx', x(averages.other.x))
+    .attr('cy', y(averages.other.y))
+    .attr('r', 10);
 }
 
 function average(array, attribute) {
