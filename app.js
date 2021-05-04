@@ -20,17 +20,22 @@ const myDotColor = "#e03030";
 const otherDotColor = "#3030e0";
 const intersectDotColor = "#a730b7";
 const foregroundDotOpacity = 0.5;
+const annotationLineColor = "#606060";
 
 // axis scaling
+const minBP = 60;
+const maxBP = 200
 const x = d3.scaleLinear()
   //.domain([0, d3.max(data, d => d['systolic_bp'])])
-  .domain([60, 280])
+  .domain([minBP, maxBP])
   .range([margin.left, width-margin.right])
   .nice();
 
+const minCholesterol = 50;
+const maxCholesterol = 400;
 const y = d3.scaleLinear()
   //.domain([0, d3.max(data, d => d['serum_cholesterol'])])
-  .domain([0, 500])
+  .domain([minCholesterol, maxCholesterol])
   .range([height - margin.bottom, margin.top])
   .nice();
 
@@ -64,6 +69,51 @@ svg.append('g')
     .attr('font-weight', 'bold')
     .text('Cholesterol (mg/dL)');
 
+// Cholesterol annotation line
+highCholesterolThreshold = 240;
+svg.append('line')
+  .attr('x1', x(minBP))
+  .attr('y1', y(highCholesterolThreshold))
+  .attr('x2', x(maxBP))
+  .attr('y2', y(highCholesterolThreshold))
+  .attr('stroke', annotationLineColor);
+svg.append('text')
+  .attr('x', x(maxBP))
+  .attr('y', y(highCholesterolThreshold))
+  .attr('text-anchor', 'end')
+  .attr('font-size', '12px')
+  .attr('dy', '-5px')
+  .text("High cholesterol");
+
+// Blood pressure annotation line 
+highBPThreshold = 140;
+lowBPThreshold = 90;
+svg.append('line')
+  .attr('x1', x(highBPThreshold))
+  .attr('y1', y(minCholesterol))
+  .attr('x2', x(highBPThreshold))
+  .attr('y2', y(maxCholesterol))
+  .attr('stroke', annotationLineColor);
+svg.append('text')
+  .attr('transform', `translate(${x(highBPThreshold)}, ${y(maxCholesterol)}) rotate(-90)`)
+  .attr('text-anchor', 'end')
+  .attr('font-size', '12px')
+  .attr('dy', '-5px')
+  .text("High BP");
+svg.append('line')
+  .attr('x1', x(lowBPThreshold))
+  .attr('y1', y(minCholesterol))
+  .attr('x2', x(lowBPThreshold))
+  .attr('y2', y(maxCholesterol))
+  .attr('stroke', annotationLineColor);
+svg.append('text')
+  .attr('transform', `translate(${x(lowBPThreshold)}, ${y(maxCholesterol)}) rotate(-90)`)
+  .attr('text-anchor', 'end')
+  .attr('font-size', '12px')
+  .attr('dy', '-5px')
+  .text("Low BP");
+
+// Main plot; setup background gray marks for now
 let participants = svg
   .selectAll('circle')
   .data(data, d => d.index)
