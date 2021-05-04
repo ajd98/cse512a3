@@ -3,7 +3,7 @@
 data = data.filter(d => d.systolic_bp > 0 && d.poverty_index > 0);
 
 // Plot parameters 
-const incomeFilterWidth = 33;
+const incomeFilterWidth = 50;
 const ageFilterWidth = 5;
 
 const width = 400;
@@ -14,10 +14,11 @@ const margin = {
   top: 10,
   bottom: 40
 };
-const backgroundDotColor = "#333";
+const backgroundDotColor = "#303030";
 const backgroundDotOpacity = 0.01;
-const myDotColor = "#e33";
-const comparisonDotColor = "#33e";
+const myDotColor = "#e03030";
+const otherDotColor = "#3030e0";
+const intersectDotColor = "#a730b7";
 const foregroundDotOpacity = 0.5;
 
 // axis scaling
@@ -78,17 +79,19 @@ document.getElementById('mainChart').appendChild(svg.node());
 let selectedAge = 35;
 let selectedSex = 1;
 let selectedPovertyIndex = 5;
+let otherPovertyIndex = 10;
 
 function onInputChange (e) {
-  console.log(slider.value);
   try {
     selectedAge = Number(ageInput.value);
   } catch(err) {
     // change styling of ageInput box here in future
   }
   selectedSex = Number(sexInput.value);
-  selectedPovertyIndex = Number(slider.value);
+  selectedPovertyIndex = Number(myIncomeSlider.value);
+  otherPovertyIndex = Number(otherIncomeSlider.value);
 
+  // filter the data for people similar to the user 
   filteredData = data.filter(
     d => (
       (d.poverty_index > selectedPovertyIndex - incomeFilterWidth) 
@@ -98,8 +101,8 @@ function onInputChange (e) {
       && (d.sex == selectedSex)
     )
   );
-
-  console.log('filtered');
+  console.log('----')
+  console.log(average(filteredData, 'systolic_bp'))
 
   participants = participants
     .data(filteredData, d => d.index)
@@ -112,17 +115,53 @@ function onInputChange (e) {
         .attr('r', d => 2),
       update => update.attr('fill', myDotColor).attr('opacity', foregroundDotOpacity),
       exit => exit
-        .attr('fill', '#000')
+        .attr('fill', backgroundDotColor)
         .attr('opacity', backgroundDotOpacity)
         .attr('cx', d => x(d.systolic_bp))
         .attr('cy', d => y(d.serum_cholesterol))
         .attr('r', d => 2),
     );
+
+  // filter the data for people with the selected other income
+  filteredData = data.filter(
+    d => (
+      (d.poverty_index > otherPovertyIndex - incomeFilterWidth) 
+      && (d.poverty_index < otherPovertyIndex + incomeFilterWidth)
+      && (d.age > selectedAge - ageFilterWidth)
+      && (d.age < selectedAge + ageFilterWidth)
+      && (d.sex == selectedSex)
+    )
+  );
+  console.log(average(filteredData, 'systolic_bp'))
+
+  participants = participants
+    .data(filteredData, d => d.index)
+    .join(
+      enter => enter.remove().append('circle')
+        .attr('fill', otherDotColor)
+        .attr('opacity', foregroundDotOpacity)
+        .attr('cx', d => x(d.systolic_bp))
+        .attr('cy', d => y(d.serum_cholesterol))
+        .attr('r', d => 2),
+      update => update.attr('fill', intersectDotColor).attr('opacity', foregroundDotOpacity),
+      exit => exit, // dont need to do anything here
+    );
 }
 
-const slider = document.getElementById('income_slider');
-slider.addEventListener('input', onInputChange);
-slider.addEventListener('change', onInputChange);
+function average(array, attribute) {
+  let total = 0;
+  for(var i = 0; i < array.length; i++) {
+    total += array[i][attribute];
+  }
+  return total/array.length
+}
+
+const myIncomeSlider = document.getElementById('myIncomeSlider');
+myIncomeSlider.addEventListener('input', onInputChange);
+myIncomeSlider.addEventListener('change', onInputChange);
+const otherIncomeSlider = document.getElementById('otherIncomeSlider');
+otherIncomeSlider.addEventListener('input', onInputChange);
+otherIncomeSlider.addEventListener('change', onInputChange);
 const ageInput = document.getElementById('ageInput');
 ageInput.addEventListener('change', onInputChange);
 const sexInput = document.getElementById('sexInput');
