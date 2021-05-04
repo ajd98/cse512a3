@@ -39,6 +39,15 @@ const y = d3.scaleLinear()
   .range([height - margin.bottom, margin.top])
   .nice();
 
+//filter data to remove points beyond axes
+data = data.filter(d => (minBP < d.systolic_bp) 
+                        && (maxBP > d.systolic_bp) 
+                        && (minCholesterol < d.serum_cholesterol)
+                        && (maxCholesterol > d.serum_cholesterol)
+);
+//temporary, for debugging
+//data = [data[0]];
+
 // create an svg
 const svg = d3.create('svg')
   .attr('width', width)
@@ -141,10 +150,11 @@ let myAverageMark = null;
 let otherAverageMark = null;
 
 function onInputChange (e) {
-  try {
-    selectedAge = Number(ageInput.value);
-  } catch(err) {
-    // change styling of ageInput box here in future
+  selectedAge = Number(ageInput.value);
+  if (isNaN(selectedAge)) {
+    ageInput.style.border = "1px solid red";
+  } else {
+    ageInput.style.border = "1px solid black";
   }
   selectedSex = Number(sexInput.value);
   selectedPovertyIndex = Number(myIncomeSlider.value);
@@ -172,7 +182,9 @@ function onInputChange (e) {
         .attr('cx', d => x(d.systolic_bp))
         .attr('cy', d => y(d.serum_cholesterol))
         .attr('r', d => 2),
-      update => update.attr('fill', myDotColor).attr('opacity', foregroundDotOpacity),
+      update => update
+        .attr('fill', myDotColor)
+        .attr('opacity', foregroundDotOpacity),
       exit => exit
         .attr('fill', backgroundDotColor)
         .attr('opacity', backgroundDotOpacity)
@@ -203,7 +215,9 @@ function onInputChange (e) {
         .attr('cx', d => x(d.systolic_bp))
         .attr('cy', d => y(d.serum_cholesterol))
         .attr('r', d => 2),
-      update => update.attr('fill', intersectDotColor).attr('opacity', foregroundDotOpacity),
+      update => update
+        .attr('fill', intersectDotColor)
+        .attr('opacity', foregroundDotOpacity),
       exit => exit, // dont need to do anything here
     );
 
@@ -218,20 +232,49 @@ function onInputChange (e) {
   } catch(err) {
     //pass
   }
-  myAverageMark = svg.append('circle')
-    .attr('fill', myDotColor)
-    .attr('stroke', 'black')
-    .attr('opacity', 1)
-    .attr('cx', x(averages.my.x))
-    .attr('cy', y(averages.my.y))
-    .attr('r', 10);
-  otherAverageMark = svg.append('circle')
-    .attr('fill', otherDotColor)
-    .attr('stroke', 'black')
-    .attr('opacity', 1)
-    .attr('cx', x(averages.other.x))
-    .attr('cy', y(averages.other.y))
-    .attr('r', 10);
+  myAverageMark = svg.append('g');
+  myAverageMark.append('line')
+    .attr('x1', x(averages.my.x))
+    .attr('y1', y(minCholesterol))
+    .attr('x2', x(averages.my.x))
+    .attr('y2', y(maxCholesterol))
+    .attr('stroke', myDotColor);
+  myAverageMark.append('line')
+    .attr('x1', x(minBP))
+    .attr('y1', y(averages.my.y))
+    .attr('x2', x(maxBP))
+    .attr('y2', y(averages.my.y))
+    .attr('stroke', myDotColor);
+
+  otherAverageMark = svg.append('g');
+  otherAverageMark.append('line')
+    .attr('x1', x(averages.other.x))
+    .attr('y1', y(minCholesterol))
+    .attr('x2', x(averages.other.x))
+    .attr('y2', y(maxCholesterol))
+    .attr('stroke', otherDotColor);
+  otherAverageMark.append('line')
+    .attr('x1', x(minBP))
+    .attr('y1', y(averages.other.y))
+    .attr('x2', x(maxBP))
+    .attr('y2', y(averages.other.y))
+    .attr('stroke', otherDotColor);
+
+  //myAverageMark = svg.append('circle')
+  //  .attr('fill', myDotColor)
+  //  .attr('stroke', 'black')
+  //  .attr('opacity', 1)
+  //  .attr('cx', x(averages.my.x))
+  //  .attr('cy', y(averages.my.y))
+  //  .attr('r', 10);
+  //otherAverageMark = svg.append('circle')
+  //  .attr('fill', otherDotColor)
+  //  .attr('stroke', 'black')
+  //  .attr('opacity', 1)
+  //  .attr('cx', x(averages.other.x))
+  //  .attr('cy', y(averages.other.y))
+  //  .attr('r', 10);
+  return Object.assign(svg.node(), {onInputChange});
 }
 
 function average(array, attribute) {
